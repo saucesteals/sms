@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"log"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/nyaruka/phonenumbers"
 	"github.com/saucesteals/sms"
 	"github.com/saucesteals/sms/smspva"
+	"github.com/saucesteals/sms/textverified"
 	"github.com/saucesteals/sms/truverifi"
 )
 
@@ -36,6 +38,13 @@ func main() {
 		client = truverifi.NewClient(*apiKey)
 	case "smspva":
 		client = smspva.NewClient(*apiKey)
+	case "textverified":
+		client = textverified.NewClient(*apiKey)
+		go func() {
+			if err := client.(*textverified.Client).KeepAuthAlive(context.Background()); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+				log.Fatalf("textverified failed to authenticate: %q", err)
+			}
+		}()
 	default:
 		log.Fatalf("unsupported provider %q", *provider)
 	}
