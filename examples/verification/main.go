@@ -40,6 +40,12 @@ func main() {
 		client = smspva.NewClient(*apiKey)
 	case "textverified":
 		client = textverified.NewClient(*apiKey)
+
+		// to avoid race between KeepAuthAlive authenticating and GetPhoneNumber needing authentication
+		if err := client.(*textverified.Client).Authenticate(context.Background()); err != nil {
+			log.Fatalf("textverified failed to authenticate: %q", err)
+		}
+
 		go func() {
 			if err := client.(*textverified.Client).KeepAuthAlive(context.Background()); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
 				log.Fatalf("textverified failed to authenticate: %q", err)

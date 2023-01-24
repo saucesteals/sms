@@ -182,7 +182,7 @@ func (c *Client) GetPhoneNumber(ctx context.Context, serviceId string, _ string)
 	}
 
 	var resp createVerificationResponse
-	err = c.do(ctx, http.MethodPost, "", createVerificationRequest{ID: id}, &resp)
+	err = c.do(ctx, http.MethodPost, "Verifications", createVerificationRequest{ID: id}, &resp)
 	if err != nil {
 		return nil, err
 	}
