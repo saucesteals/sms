@@ -31,8 +31,9 @@ func messageMatcher(message string) string {
 func main() {
 	flag.Parse()
 
-	var client sms.Client
+	ctx := context.Background()
 
+	var client sms.Client
 	switch *provider {
 	case "truverifi":
 		client = truverifi.NewClient(*apiKey)
@@ -42,20 +43,18 @@ func main() {
 		client = textverified.NewClient(*apiKey)
 
 		// to avoid race between KeepAuthAlive authenticating and GetPhoneNumber needing authentication
-		if err := client.(*textverified.Client).Authenticate(context.Background()); err != nil {
+		if err := client.(*textverified.Client).Authenticate(ctx); err != nil {
 			log.Fatalf("textverified failed to authenticate: %q", err)
 		}
 
 		go func() {
-			if err := client.(*textverified.Client).KeepAuthAlive(context.Background()); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+			if err := client.(*textverified.Client).KeepAuthAlive(ctx); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
 				log.Fatalf("textverified failed to authenticate: %q", err)
 			}
 		}()
 	default:
 		log.Fatalf("unsupported provider %q", *provider)
 	}
-
-	ctx := context.Background()
 
 	phone, err := client.GetPhoneNumber(ctx, *service, *country)
 	if err != nil {
