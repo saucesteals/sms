@@ -154,11 +154,11 @@ func (c *Client) KeepAuthAlive(ctx context.Context) error {
 
 }
 
-type createVerificationRequest struct {
+type serviceID struct {
 	ID int64 `json:"id"`
 }
 
-type createVerificationResponse struct {
+type verification struct {
 	ID              string  `json:"id"`
 	Cost            float64 `json:"cost"`
 	TargetName      string  `json:"target_name"`
@@ -181,8 +181,8 @@ func (c *Client) GetPhoneNumber(ctx context.Context, serviceId string, _ string)
 		return nil, fmt.Errorf("textverified: invalid service id: %w", err)
 	}
 
-	var resp createVerificationResponse
-	err = c.do(ctx, http.MethodPost, "Verifications", createVerificationRequest{ID: id}, &resp)
+	var resp verification
+	err = c.do(ctx, http.MethodPost, "Verifications", serviceID{ID: id}, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -195,30 +195,13 @@ func (c *Client) GetPhoneNumber(ctx context.Context, serviceId string, _ string)
 	return &sms.PhoneNumber{PhoneNumber: number, Metadata: metadata{id: resp.ID}}, nil
 }
 
-type verificationDetailsResponse struct {
-	ID              string  `json:"id"`
-	Cost            float64 `json:"cost"`
-	TargetName      string  `json:"target_name"`
-	Number          string  `json:"number"`
-	SenderNumber    string  `json:"sender_number"`
-	TimeRemaining   string  `json:"time_remaining"`
-	ReuseWindow     string  `json:"reuse_window"`
-	Status          string  `json:"status"`
-	Sms             string  `json:"sms"`
-	Code            string  `json:"code"`
-	VerificationURI string  `json:"verification_uri"`
-	CancelURI       string  `json:"cancel_uri"`
-	ReportURI       string  `json:"report_uri"`
-	ReuseURI        string  `json:"reuse_uri"`
-}
-
 func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) ([]string, error) {
 	metadata, ok := phoneNumber.Metadata.(metadata)
 	if !ok {
 		return nil, sms.ErrInvalidMetadata
 	}
 
-	resp := &verificationDetailsResponse{}
+	resp := &verification{}
 	if err := c.do(ctx, http.MethodGet, "Verifications/"+metadata.id, nil, resp); err != nil {
 		return nil, err
 	}
@@ -236,4 +219,13 @@ func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) 
 	}
 
 	return []string{resp.Sms}, nil
+}
+
+func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
+	metadata, ok := phoneNumber.Metadata.(metadata)
+	if !ok {
+		return sms.ErrInvalidMetadata
+	}
+
+	return c.do(ctx, http.MethodPut, "Verifications/"+metadata.id+"/Cancel", nil, nil)
 }

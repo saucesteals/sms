@@ -119,3 +119,8 @@ func (c *Client) GetMessages(ctx context.Context, _ *sms.PhoneNumber) ([]string,
 	}
 	return messages, nil
 }
+
+func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
+	// truverifi does not support cancelling
+	return nil
+}

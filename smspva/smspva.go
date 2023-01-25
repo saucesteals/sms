@@ -92,8 +92,8 @@ type getMessagesResponse struct {
 	Text     string `json:"text"`
 }
 
-func (c *Client) GetMessages(ctx context.Context, details *sms.PhoneNumber) ([]string, error) {
-	metadata, ok := details.Metadata.(metadata)
+func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) ([]string, error) {
+	metadata, ok := phoneNumber.Metadata.(metadata)
 	if !ok {
 		return nil, sms.ErrInvalidMetadata
 	}
@@ -118,4 +118,25 @@ func (c *Client) GetMessages(ctx context.Context, details *sms.PhoneNumber) ([]s
 	}
 
 	return []string{data.Text}, nil
+}
+
+func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
+	metadata, ok := phoneNumber.Metadata.(metadata)
+	if !ok {
+		return sms.ErrInvalidMetadata
+	}
+
+	var data getPhoneNumberResponse
+	c.do(ctx, url.Values{
+		"metod":   {"denial"},
+		"country": {metadata.country},
+		"service": {metadata.service},
+		"id":      {metadata.id},
+	}, &data)
+
+	if data.Response != "1" {
+		return fmt.Errorf("smspva: denial bad response %+v", data)
+	}
+
+	return nil
 }
