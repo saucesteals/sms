@@ -60,6 +60,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer client.CancelPhoneNumber(context.Background(), phone) // Background() - ensure it gets cancelled regardless of ctx
 
 	log.Printf("got phone number: %s", phone.Format(phonenumbers.INTERNATIONAL))
 

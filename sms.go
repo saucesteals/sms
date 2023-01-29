@@ -14,6 +14,16 @@ var (
 type PhoneNumber struct {
 	*phonenumbers.PhoneNumber
 	Metadata any
+
+	cancelled bool
+}
+
+func (p *PhoneNumber) MarkCancelled() {
+	p.cancelled = true
+}
+
+func (p *PhoneNumber) Cancelled() bool {
+	return p.cancelled
 }
 
 func (p *PhoneNumber) Format(format phonenumbers.PhoneNumberFormat) string {

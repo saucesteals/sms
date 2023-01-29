@@ -22,22 +22,13 @@ func (m *Matcher) WaitForMessage(ctx context.Context, client Client, phoneNumber
 	ctx, cancel := context.WithTimeout(ctx, m.Timeout)
 	defer cancel()
 
-	cancelPhoneNumber := func() {
-		// new ctx - existing could already be cancelled
-		_ctx, _cancel := context.WithTimeout(context.Background(), time.Second*5)
-		client.CancelPhoneNumber(_ctx, phoneNumber) // ignore err
-		_cancel()
-	}
-
 	for {
 		select {
 		case <-ctx.Done():
-			cancelPhoneNumber()
 			return "", fmt.Errorf("sms: waiting for messages: %w", ctx.Err())
 		default:
 			messages, err := client.GetMessages(ctx, phoneNumber)
 			if err != nil {
-				cancelPhoneNumber()
 				return "", err
 			}
 

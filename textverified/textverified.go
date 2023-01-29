@@ -222,6 +222,10 @@ func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) 
 }
 
 func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
+	if phoneNumber.Cancelled() {
+		return nil
+	}
+
 	metadata, ok := phoneNumber.Metadata.(metadata)
 	if !ok {
 		return sms.ErrInvalidMetadata
