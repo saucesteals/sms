@@ -50,10 +50,8 @@ func (e *errorResponse) Error() error {
 
 type getPhoneNumberResponse struct {
 	errorResponse
-	RequestID     int    `json:"request_id"`
-	CountryID     int    `json:"country_id"`
-	ApplicationID int    `json:"application_id"`
-	Number        string `json:"number"`
+	RequestID int    `json:"request_id"`
+	Number    string `json:"number"`
 }
 
 func (c *Client) do(ctx context.Context, action string, query url.Values, response smsManResponse) error {
@@ -108,11 +106,7 @@ func (c *Client) GetPhoneNumber(ctx context.Context, service string, country str
 
 type getSmsResponse struct {
 	errorResponse
-	RequestID     string `json:"request_id"`
-	CountryID     int    `json:"country_id"`
-	ApplicationID int    `json:"application_id"`
-	Number        string `json:"number"`
-	SmsCode       string `json:"sms_code"`
+	SmsCode string `json:"sms_code"`
 }
 
 func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) ([]string, error) {
