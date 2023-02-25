@@ -139,11 +139,10 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 		return sms.ErrInvalidMetadata
 	}
 
-	var data getPhoneNumberResponse
 	if err := c.do(ctx, "set-status", url.Values{
 		"status":     {"reject"},
 		"request_id": {metadata.requestID},
-	}, &data); err != nil {
+	}, nil); err != nil {
 		return err
 	}
 
