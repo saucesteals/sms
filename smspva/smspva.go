@@ -131,12 +131,14 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 	}
 
 	var data getPhoneNumberResponse
-	c.do(ctx, url.Values{
+	if err := c.do(ctx, url.Values{
 		"metod":   {"denial"},
 		"country": {metadata.country},
 		"service": {metadata.service},
 		"id":      {metadata.id},
-	}, &data)
+	}, &data); err != nil {
+		return err
+	}
 
 	if data.Response != "1" {
 		return fmt.Errorf("smspva: denial bad response %+v", data)
