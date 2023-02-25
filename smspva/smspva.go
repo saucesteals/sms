@@ -65,11 +65,13 @@ func (c *Client) do(ctx context.Context, query url.Values, response any) error {
 
 func (c *Client) GetPhoneNumber(ctx context.Context, service string, country string) (*sms.PhoneNumber, error) {
 	var data getPhoneNumberResponse
-	c.do(ctx, url.Values{
+	if err := c.do(ctx, url.Values{
 		"metod":   {"get_number"},
 		"country": {country},
 		"service": {service},
-	}, &data)
+	}, &data); err != nil {
+		return nil, err
+	}
 
 	if data.Response != "1" {
 		return nil, fmt.Errorf("smspva: get_number bad response %+v", data)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/nyaruka/phonenumbers"
 	"github.com/saucesteals/sms"
+	"github.com/saucesteals/sms/smsman"
 	"github.com/saucesteals/sms/smspva"
 	"github.com/saucesteals/sms/textverified"
 	"github.com/saucesteals/sms/truverifi"
@@ -35,6 +36,8 @@ func main() {
 
 	var client sms.Client
 	switch *provider {
+	case "smsman":
+		client = smsman.NewClient(*apiKey)
 	case "truverifi":
 		client = truverifi.NewClient(*apiKey)
 	case "smspva":

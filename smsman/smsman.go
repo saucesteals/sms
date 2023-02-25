@@ -1,4 +1,4 @@
-package smspva
+package smsman
 
 import (
 	"context"
@@ -41,7 +41,7 @@ type errorResponse struct {
 }
 
 func (e *errorResponse) Failed() bool {
-	return e.ErrorCode != ""
+	return e.ErrorCode != "" && e.ErrorCode != "wait_sms"
 }
 
 func (e *errorResponse) Error() error {
@@ -88,10 +88,12 @@ func (c *Client) do(ctx context.Context, action string, query url.Values, respon
 
 func (c *Client) GetPhoneNumber(ctx context.Context, service string, country string) (*sms.PhoneNumber, error) {
 	var data getPhoneNumberResponse
-	c.do(ctx, "get-number", url.Values{
+	if err := c.do(ctx, "get-number", url.Values{
 		"country_id":     {country},
 		"application_id": {service},
-	}, &data)
+	}, &data); err != nil {
+		return nil, err
+	}
 
 	number, err := phonenumbers.Parse(data.Number, "US")
 	if err != nil {
@@ -106,7 +108,7 @@ func (c *Client) GetPhoneNumber(ctx context.Context, service string, country str
 
 type getSmsResponse struct {
 	errorResponse
-	RequestID     int    `json:"request_id"`
+	RequestID     string `json:"request_id"`
 	CountryID     int    `json:"country_id"`
 	ApplicationID int    `json:"application_id"`
 	Number        string `json:"number"`
