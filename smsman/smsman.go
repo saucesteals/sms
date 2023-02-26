@@ -166,5 +166,7 @@ func (c *Client) ReportPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 		return err
 	}
 
+	phoneNumber.MarkUsed()
+
 	return nil
 }
