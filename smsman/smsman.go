@@ -142,5 +142,23 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 		return err
 	}
 
+	phoneNumber.MarkCancelled()
+
+	return nil
+}
+
+func (c *Client) ReportPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
+	metadata, ok := phoneNumber.Metadata.(metadata)
+	if !ok {
+		return sms.ErrInvalidMetadata
+	}
+
+	if err := c.do(ctx, "set-status", url.Values{
+		"status":     {"ok"},
+		"request_id": {metadata.requestID},
+	}, nil); err != nil {
+		return err
+	}
+
 	return nil
 }

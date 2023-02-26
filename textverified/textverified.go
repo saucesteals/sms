@@ -231,5 +231,24 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 		return sms.ErrInvalidMetadata
 	}
 
-	return c.do(ctx, http.MethodPut, "Verifications/"+metadata.id+"/Cancel", nil, nil)
+	err := c.do(ctx, http.MethodPut, "Verifications/"+metadata.id+"/Cancel", nil, nil)
+	if err != nil {
+		return err
+	}
+
+	phoneNumber.MarkCancelled()
+	return nil
+}
+
+func (c *Client) ReportPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
+	if phoneNumber.Cancelled() {
+		return nil
+	}
+
+	metadata, ok := phoneNumber.Metadata.(metadata)
+	if !ok {
+		return sms.ErrInvalidMetadata
+	}
+
+	return c.do(ctx, http.MethodPut, "Verifications/"+metadata.id+"/Report", nil, nil)
 }

@@ -146,5 +146,12 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 		return fmt.Errorf("smspva: denial bad response %+v", data)
 	}
 
+	phoneNumber.MarkCancelled()
+
+	return nil
+}
+
+func (c *Client) ReportPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
+	// smspva does not support reporting
 	return nil
 }

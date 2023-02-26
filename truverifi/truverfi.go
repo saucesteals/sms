@@ -124,3 +124,8 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 	// truverifi does not support cancelling
 	return nil
 }
+
+func (c *Client) ReportPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
+	// truverifi does not support reporting
+	return nil
+}
