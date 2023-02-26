@@ -119,11 +119,13 @@ func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) 
 		return nil, fmt.Errorf("smspva: get_sms bad response %+v", data)
 	}
 
+	phoneNumber.MarkUsed()
+
 	return []string{data.Text}, nil
 }
 
 func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
-	if phoneNumber.Cancelled() {
+	if phoneNumber.Used() || phoneNumber.Cancelled() {
 		return nil
 	}
 

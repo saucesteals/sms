@@ -15,7 +15,16 @@ type PhoneNumber struct {
 	*phonenumbers.PhoneNumber
 	Metadata any
 
+	used      bool
 	cancelled bool
+}
+
+func (p *PhoneNumber) MarkUsed() {
+	p.used = true
+}
+
+func (p *PhoneNumber) Used() bool {
+	return p.used
 }
 
 func (p *PhoneNumber) MarkCancelled() {

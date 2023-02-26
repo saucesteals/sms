@@ -122,11 +122,17 @@ func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) 
 		return nil, err
 	}
 
+	if data.SmsCode == "" {
+		return []string{}, nil
+	}
+
+	phoneNumber.MarkUsed()
+
 	return []string{data.SmsCode}, nil
 }
 
 func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
-	if phoneNumber.Cancelled() {
+	if phoneNumber.Used() || phoneNumber.Cancelled() {
 		return nil
 	}
 

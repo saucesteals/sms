@@ -218,11 +218,13 @@ func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) 
 		return nil, ErrCancelled
 	}
 
+	phoneNumber.MarkUsed()
+
 	return []string{resp.Sms}, nil
 }
 
 func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
-	if phoneNumber.Cancelled() {
+	if phoneNumber.Used() || phoneNumber.Cancelled() {
 		return nil
 	}
 

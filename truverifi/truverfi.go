@@ -108,7 +108,7 @@ type lineSms struct {
 	Text        string    `json:"text"`
 }
 
-func (c *Client) GetMessages(ctx context.Context, _ *sms.PhoneNumber) ([]string, error) {
+func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) ([]string, error) {
 	resp := &lineResponse{}
 	if err := c.do(ctx, http.MethodGet, "line", nil, resp); err != nil {
 		return nil, err
@@ -117,6 +117,11 @@ func (c *Client) GetMessages(ctx context.Context, _ *sms.PhoneNumber) ([]string,
 	for i, sms := range resp.Sms {
 		messages[i] = sms.Text
 	}
+
+	if len(messages) > 1 {
+		phoneNumber.MarkUsed()
+	}
+
 	return messages, nil
 }
 
