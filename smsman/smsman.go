@@ -160,7 +160,7 @@ func (c *Client) ReportPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 	}
 
 	if err := c.do(ctx, "set-status", url.Values{
-		"status":     {"ok"},
+		"status":     {"used"},
 		"request_id": {metadata.requestID},
 	}, nil); err != nil {
 		return err

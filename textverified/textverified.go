@@ -252,5 +252,11 @@ func (c *Client) ReportPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 		return sms.ErrInvalidMetadata
 	}
 
-	return c.do(ctx, http.MethodPut, "Verifications/"+metadata.id+"/Report", nil, nil)
+	err := c.do(ctx, http.MethodPut, "Verifications/"+metadata.id+"/Report", nil, nil)
+	if err != nil {
+		return err
+	}
+
+	phoneNumber.MarkCancelled()
+	return nil
 }
