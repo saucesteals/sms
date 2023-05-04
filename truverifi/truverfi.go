@@ -36,7 +36,13 @@ type changeServiceResponse struct {
 	PhoneNumber string `json:"phoneNumber"`
 }
 
-func (c *Client) do(ctx context.Context, method string, path string, payload any, response any) error {
+func (c *Client) do(
+	ctx context.Context,
+	method string,
+	path string,
+	payload any,
+	response any,
+) error {
 	var bodyReader io.Reader
 
 	if payload != nil {
@@ -47,7 +53,12 @@ func (c *Client) do(ctx context.Context, method string, path string, payload any
 		bodyReader = bytes.NewReader(b)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, "https://app.truverifi.com/api/"+path, bodyReader)
+	req, err := http.NewRequestWithContext(
+		ctx,
+		method,
+		"https://app.truverifi.com/api/"+path,
+		bodyReader,
+	)
 	if err != nil {
 		return err
 	}
@@ -57,12 +68,30 @@ func (c *Client) do(ctx context.Context, method string, path string, payload any
 		"x-api-key":    []string{c.apiKey},
 	}
 
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
+	var resp *http.Response
+	maxRetries := 3
+	retryDelay := 20 * time.Second
 
+	for i := 0; i < maxRetries; i++ {
+		resp, err = c.http.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 429 {
+			break
+		}
+
+		if i < maxRetries-1 {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(retryDelay):
+				continue
+			}
+		}
+	}
 	if response == nil {
 		return nil
 	}
@@ -74,9 +103,19 @@ func (c *Client) do(ctx context.Context, method string, path string, payload any
 	return nil
 }
 
-func (c *Client) GetPhoneNumber(ctx context.Context, service string, _ string) (*sms.PhoneNumber, error) {
+func (c *Client) GetPhoneNumber(
+	ctx context.Context,
+	service string,
+	_ string,
+) (*sms.PhoneNumber, error) {
 	var resp changeServiceResponse
-	err := c.do(ctx, http.MethodPost, "line/changeService", changeServicePayload{Services: []string{service}}, &resp)
+	err := c.do(
+		ctx,
+		http.MethodPost,
+		"line/changeService",
+		changeServicePayload{Services: []string{service}},
+		&resp,
+	)
 	if err != nil {
 		return nil, err
 	}
