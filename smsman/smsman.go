@@ -55,6 +55,10 @@ type getPhoneNumberResponse struct {
 }
 
 func (c *Client) do(ctx context.Context, action string, query url.Values, response smsManResponse) error {
+	if query == nil {
+		query = url.Values{}
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://api.sms-man.com/control/"+action, nil)
 	if err != nil {
 		return err

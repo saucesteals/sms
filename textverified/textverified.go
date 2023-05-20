@@ -260,3 +260,22 @@ func (c *Client) ReportPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 	phoneNumber.MarkCancelled()
 	return nil
 }
+
+type Target struct {
+	TargetID       int     `json:"targetId"`
+	Name           string  `json:"name"`
+	NormalizedName string  `json:"normalizedName"`
+	Cost           float64 `json:"cost"`
+	Status         string  `json:"status"`
+	PricingMode    string  `json:"pricingMode"`
+}
+
+func (c *Client) GetTargets(ctx context.Context) ([]Target, error) {
+	var targets []Target
+	err := c.do(ctx, http.MethodGet, "targets", nil, &targets)
+	if err != nil {
+		return nil, err
+	}
+
+	return targets, nil
+}
