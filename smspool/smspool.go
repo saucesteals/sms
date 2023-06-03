@@ -140,7 +140,7 @@ func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) 
 
 	resp := &smscheck{}
 	if err := c.do(ctx, http.MethodGet, "sms/check", url.Values{
-		"orderID": {metadata.id},
+		"orderid": {metadata.id},
 	}, resp); err != nil {
 		return nil, err
 	}
