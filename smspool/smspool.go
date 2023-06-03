@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
-	"strconv"
 
 	"github.com/nyaruka/phonenumbers"
 	"github.com/saucesteals/sms"
@@ -48,23 +47,17 @@ func statusText(code int) string {
 func (c *Client) do(ctx context.Context, method string, path string, payload any, response any) error {
 	var bodyReader io.Reader
 
-	query := url.Values{}
-	val := reflect.ValueOf(payload)
-	typ := val.Type()
-
-	for i := 0; i < val.NumField(); i++ {
-		field := val.Field(i)
-		fieldType := typ.Field(i)
-
-		query.Add(fieldType.Name, fmt.Sprintf("%v", field.Interface()))
-	}
-
 	requrl, err := url.Parse("https://api.smspool.net/" + path)
 	if err != nil {
 		return err
 	}
 
-	requrl.RawQuery = query.Encode()
+	values, ok := payload.(url.Values)
+	if !ok {
+		return fmt.Errorf("smspool: invalid payload type: %s", reflect.TypeOf(payload))
+	}
+
+	requrl.RawQuery = values.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, method, requrl.String(), bodyReader)
 	if err != nil {
@@ -95,17 +88,6 @@ func (c *Client) do(ctx context.Context, method string, path string, payload any
 	return nil
 }
 
-type purchaseSMS struct {
-	Key     string
-	Country string
-	Service int64
-}
-
-type orderId struct {
-	Key     string
-	OrderId string
-}
-
 type verification struct {
 	Success     int    `json:"success"`
 	Number      string `json:"number"`
@@ -129,15 +111,6 @@ type smscheck struct {
 	Expiration int    `json:"expiration"`
 }
 
-type cancel struct {
-	Key     string
-	OrderId string
-}
-
-type key struct {
-	Key string
-}
-
 type service struct {
 	Id   int    `json:"ID"`
 	Name string `json:"name"`
@@ -145,8 +118,8 @@ type service struct {
 
 func (c *Client) GetServices(ctx context.Context) ([]service, error) {
 	var services []service
-	err := c.do(ctx, http.MethodGet, "service/retrieve_all", key{
-		Key: c.apiKey,
+	err := c.do(ctx, http.MethodGet, "service/retrieve_all", url.Values{
+		"key": {c.apiKey},
 	}, &services)
 	if err != nil {
 		return nil, err
@@ -156,16 +129,11 @@ func (c *Client) GetServices(ctx context.Context) ([]service, error) {
 }
 
 func (c *Client) GetPhoneNumber(ctx context.Context, serviceId string, _ string) (*sms.PhoneNumber, error) {
-	id, err := strconv.ParseInt(serviceId, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("smspool: invalid service id: %w", err)
-	}
-
 	var resp verification
-	err = c.do(ctx, http.MethodGet, "purchase/sms", purchaseSMS{
-		Key:     c.apiKey,
-		Country: "US",
-		Service: id,
+	err := c.do(ctx, http.MethodGet, "purchase/sms", url.Values{
+		"key":     {c.apiKey},
+		"country": {"US"},
+		"service": {serviceId},
 	}, &resp)
 	if err != nil {
 		return nil, err
@@ -186,9 +154,9 @@ func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) 
 	}
 
 	resp := &smscheck{}
-	if err := c.do(ctx, http.MethodGet, "sms/check", orderId{
-		Key:     c.apiKey,
-		OrderId: metadata.id,
+	if err := c.do(ctx, http.MethodGet, "sms/check", url.Values{
+		"key":     {c.apiKey},
+		"orderID": {metadata.id},
 	}, resp); err != nil {
 		return nil, err
 	}
@@ -226,9 +194,9 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 	}
 
 	resp := &smscheck{}
-	err := c.do(ctx, http.MethodGet, "sms/cancel", cancel{
-		Key:     c.apiKey,
-		OrderId: metadata.id,
+	err := c.do(ctx, http.MethodGet, "sms/cancel", url.Values{
+		"key":     {c.apiKey},
+		"orderID": {metadata.id},
 	}, resp)
 	if err != nil {
 		return err
