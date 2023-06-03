@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"reflect"
 
 	"github.com/nyaruka/phonenumbers"
 	"github.com/saucesteals/sms"
@@ -40,26 +39,12 @@ func NewClient(apiKey string) *Client {
 	}
 }
 
-func statusText(code int) string {
-	return http.StatusText(code)
-}
-
-func (c *Client) do(ctx context.Context, method string, path string, payload any, response any) error {
+func (c *Client) do(ctx context.Context, method string, path string, query url.Values, response any) error {
 	var bodyReader io.Reader
 
-	requrl, err := url.Parse("https://api.smspool.net/" + path)
-	if err != nil {
-		return err
-	}
+	url := "https://api.smspool.net/" + path + "?" + query.Encode()
 
-	values, ok := payload.(url.Values)
-	if !ok {
-		return fmt.Errorf("smspool: invalid payload type: %s", reflect.TypeOf(payload))
-	}
-
-	requrl.RawQuery = values.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, method, requrl.String(), bodyReader)
+	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
 	if err != nil {
 		return err
 	}
@@ -74,7 +59,7 @@ func (c *Client) do(ctx context.Context, method string, path string, payload any
 		if resp.StatusCode == http.StatusUnauthorized {
 			return ErrUnauthorized
 		}
-		return fmt.Errorf("smspool: %d %s", resp.StatusCode, statusText(resp.StatusCode))
+		return fmt.Errorf("smspool: %d %s", resp.StatusCode, resp.Status)
 	}
 
 	if response == nil {
