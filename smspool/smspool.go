@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 
@@ -40,8 +39,6 @@ func NewClient(apiKey string) *Client {
 }
 
 func (c *Client) do(ctx context.Context, method string, path string, query url.Values, response any) error {
-	var bodyReader io.Reader
-
 	if query == nil {
 		query = url.Values{}
 	}
@@ -50,7 +47,7 @@ func (c *Client) do(ctx context.Context, method string, path string, query url.V
 
 	url := "https://api.smspool.net/" + path + "?" + query.Encode()
 
-	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
+	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	if err != nil {
 		return err
 	}
