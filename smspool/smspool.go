@@ -144,11 +144,7 @@ func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) 
 	}, resp); err != nil {
 		return nil, err
 	}
-
-	if resp.Success == 0 {
-		return nil, fmt.Errorf("smspool: %s", resp.Message)
-	}
-
+	
 	switch resp.Status {
 	case 1:
 		return []string{}, nil
@@ -179,7 +175,7 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 
 	resp := &smscheck{}
 	err := c.do(ctx, http.MethodGet, "sms/cancel", url.Values{
-		"orderID": {metadata.id},
+		"orderid": {metadata.id},
 	}, resp)
 	if err != nil {
 		return err
