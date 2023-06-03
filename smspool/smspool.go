@@ -42,6 +42,12 @@ func NewClient(apiKey string) *Client {
 func (c *Client) do(ctx context.Context, method string, path string, query url.Values, response any) error {
 	var bodyReader io.Reader
 
+	if query == nil {
+		query = url.Values{}
+	}
+
+	query.Set("key", c.apiKey)
+
 	url := "https://api.smspool.net/" + path + "?" + query.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
@@ -103,9 +109,7 @@ type service struct {
 
 func (c *Client) GetServices(ctx context.Context) ([]service, error) {
 	var services []service
-	err := c.do(ctx, http.MethodGet, "service/retrieve_all", url.Values{
-		"key": {c.apiKey},
-	}, &services)
+	err := c.do(ctx, http.MethodGet, "service/retrieve_all", nil, &services)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +120,6 @@ func (c *Client) GetServices(ctx context.Context) ([]service, error) {
 func (c *Client) GetPhoneNumber(ctx context.Context, serviceId string, _ string) (*sms.PhoneNumber, error) {
 	var resp verification
 	err := c.do(ctx, http.MethodGet, "purchase/sms", url.Values{
-		"key":     {c.apiKey},
 		"country": {"US"},
 		"service": {serviceId},
 	}, &resp)
@@ -140,7 +143,6 @@ func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) 
 
 	resp := &smscheck{}
 	if err := c.do(ctx, http.MethodGet, "sms/check", url.Values{
-		"key":     {c.apiKey},
 		"orderID": {metadata.id},
 	}, resp); err != nil {
 		return nil, err
@@ -180,7 +182,6 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 
 	resp := &smscheck{}
 	err := c.do(ctx, http.MethodGet, "sms/cancel", url.Values{
-		"key":     {c.apiKey},
 		"orderID": {metadata.id},
 	}, resp)
 	if err != nil {
