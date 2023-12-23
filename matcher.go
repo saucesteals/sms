@@ -18,27 +18,40 @@ func NewMatcher(matcher MatcherFn, delay time.Duration, timeout time.Duration) *
 	return &Matcher{MatcherFn: matcher, Delay: delay, Timeout: timeout}
 }
 
+func (m *Matcher) getMatch(ctx context.Context, client Client, phoneNumber *PhoneNumber) (string, error) {
+	messages, err := client.GetMessages(ctx, phoneNumber)
+	if err != nil {
+		return "", err
+	}
+
+	for _, sms := range messages {
+		if match := m.MatcherFn(sms); match != "" {
+			return match, nil
+		}
+	}
+
+	return "", nil
+}
+
 func (m *Matcher) WaitForMessage(ctx context.Context, client Client, phoneNumber *PhoneNumber) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, m.Timeout)
 	defer cancel()
+
+	if match, err := m.getMatch(ctx, client, phoneNumber); err != nil || match != "" {
+		return match, err
+	}
+
+	ticker := time.NewTicker(m.Delay)
+	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
 			return "", fmt.Errorf("sms: waiting for messages: %w", ctx.Err())
-		default:
-			messages, err := client.GetMessages(ctx, phoneNumber)
-			if err != nil {
-				return "", err
+		case <-ticker.C:
+			if match, err := m.getMatch(ctx, client, phoneNumber); err != nil || match != "" {
+				return match, err
 			}
-
-			for _, sms := range messages {
-				if match := m.MatcherFn(sms); match != "" {
-					return match, nil
-				}
-			}
-
-			time.Sleep(m.Delay)
 		}
 	}
 }
