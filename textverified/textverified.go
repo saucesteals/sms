@@ -195,6 +195,26 @@ func (c *Client) GetPhoneNumber(ctx context.Context, serviceId string, _ string)
 	return &sms.PhoneNumber{PhoneNumber: number, Metadata: metadata{id: resp.ID}}, nil
 }
 
+func (c *Client) ReusePhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) (*sms.PhoneNumber, error) {
+	meta, ok := phoneNumber.Metadata.(metadata)
+	if !ok {
+		return nil, sms.ErrInvalidMetadata
+	}
+
+	var resp verification
+	err := c.do(ctx, http.MethodPut, fmt.Sprintf("Verifications/%s/Reuse", meta.id), nil, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	number, err := phonenumbers.Parse(resp.Number, "US")
+	if err != nil {
+		return nil, fmt.Errorf("textverified: parsing phone number (%s): %w", resp.Number, err)
+	}
+
+	return &sms.PhoneNumber{PhoneNumber: number, Metadata: metadata{id: resp.ID}}, nil
+}
+
 func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) ([]string, error) {
 	metadata, ok := phoneNumber.Metadata.(metadata)
 	if !ok {
