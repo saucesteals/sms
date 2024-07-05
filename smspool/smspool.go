@@ -144,7 +144,7 @@ func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) 
 	}, resp); err != nil {
 		return nil, err
 	}
-	
+
 	switch resp.Status {
 	case 1:
 		return []string{}, nil
@@ -187,4 +187,21 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 
 	phoneNumber.MarkCancelled()
 	return nil
+}
+
+func (c *Client) ReusePhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) (*sms.PhoneNumber, error) {
+	metadata, ok := phoneNumber.Metadata.(metadata)
+	if !ok {
+		return nil, sms.ErrInvalidMetadata
+	}
+
+	var resp verification
+	err := c.do(ctx, http.MethodPost, "sms/reactivate", url.Values{
+		"orderid": {metadata.id},
+	}, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return phoneNumber, nil
 }
