@@ -195,10 +195,9 @@ func (c *Client) ReusePhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNum
 		return nil, sms.ErrInvalidMetadata
 	}
 
-	var resp verification
 	err := c.do(ctx, http.MethodPost, "sms/reactivate", url.Values{
 		"orderid": {metadata.id},
-	}, &resp)
+	}, nil)
 	if err != nil {
 		return nil, err
 	}
