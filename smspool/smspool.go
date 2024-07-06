@@ -76,23 +76,26 @@ func (c *Client) do(ctx context.Context, method string, path string, query url.V
 	return nil
 }
 
+type apiResponse struct {
+	Success int    `json:"success"`
+	Message string `json:"message"`
+}
+
 type verification struct {
-	Success     int    `json:"success"`
-	Number      string `json:"number"`
-	Cc          string `json:"cc"`
+	apiResponse
+	Number      int    `json:"number"`
+	CC          string `json:"cc"`
 	Phonenumber string `json:"phonenumber"`
 	OrderID     string `json:"order_id"`
 	Country     string `json:"country"`
 	Service     string `json:"service"`
 	Pool        int    `json:"pool"`
 	ExpiresIn   int    `json:"expires_in"`
-	Message     string `json:"message"`
 	Cost        string `json:"cost"`
 }
 
-type smscheck struct {
-	Success    int    `json:"success"`
-	Message    string `json:"message"`
+type smsCheckResponse struct {
+	apiResponse
 	Status     int    `json:"status"`
 	Sms        string `json:"sms"`
 	FullSms    string `json:"full_sms"`
@@ -114,22 +117,26 @@ func (c *Client) GetServices(ctx context.Context) ([]service, error) {
 	return services, nil
 }
 
-func (c *Client) GetPhoneNumber(ctx context.Context, serviceId string, _ string) (*sms.PhoneNumber, error) {
-	var resp verification
+func (c *Client) GetPhoneNumber(ctx context.Context, serviceId string, country string) (*sms.PhoneNumber, error) {
+	var res verification
 	err := c.do(ctx, http.MethodGet, "purchase/sms", url.Values{
-		"country": {"US"},
+		"country": {country},
 		"service": {serviceId},
-	}, &resp)
+	}, &res)
 	if err != nil {
 		return nil, err
 	}
 
-	number, err := phonenumbers.Parse(resp.Number, "US")
-	if err != nil {
-		return nil, fmt.Errorf("smspool: parsing phone number (%s): %w", resp.Number, err)
+	if res.Success == 0 {
+		return nil, fmt.Errorf("smspool: %s", res.Message)
 	}
 
-	return &sms.PhoneNumber{PhoneNumber: number, Metadata: metadata{id: resp.OrderID}}, nil
+	number, err := phonenumbers.Parse(fmt.Sprintf("+%s%s", res.CC, res.Phonenumber), "US")
+	if err != nil {
+		return nil, fmt.Errorf("smspool: parsing phone number (%s): %w", res.Phonenumber, err)
+	}
+
+	return &sms.PhoneNumber{PhoneNumber: number, Metadata: metadata{id: res.OrderID}}, nil
 }
 
 func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) ([]string, error) {
@@ -138,28 +145,26 @@ func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) 
 		return nil, sms.ErrInvalidMetadata
 	}
 
-	resp := &smscheck{}
+	var res smsCheckResponse
 	if err := c.do(ctx, http.MethodGet, "sms/check", url.Values{
 		"orderid": {metadata.id},
-	}, resp); err != nil {
+	}, &res); err != nil {
 		return nil, err
 	}
 
-	switch resp.Status {
-	case 1:
+	switch res.Status {
+	case 1, 4:
 		return []string{}, nil
 	case 2:
 		return nil, ErrVerificationExpired
 	case 3:
 		phoneNumber.MarkUsed()
 
-		return []string{resp.FullSms}, nil
-	case 4:
-		return nil, ErrReported
+		return []string{res.FullSms}, nil
 	case 5:
 		return nil, ErrCancelled
 	default:
-		return nil, fmt.Errorf("smspool: unknown status %d", resp.Status)
+		return nil, fmt.Errorf("smspool: unknown status %d", res.Status)
 	}
 }
 
@@ -173,16 +178,16 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 		return sms.ErrInvalidMetadata
 	}
 
-	resp := &smscheck{}
+	var res apiResponse
 	err := c.do(ctx, http.MethodGet, "sms/cancel", url.Values{
 		"orderid": {metadata.id},
-	}, resp)
+	}, &res)
 	if err != nil {
 		return err
 	}
 
-	if resp.Success == 0 {
-		return fmt.Errorf("smspool: %s", resp.Message)
+	if res.Success == 0 {
+		return fmt.Errorf("smspool: %s", res.Message)
 	}
 
 	phoneNumber.MarkCancelled()
@@ -195,11 +200,16 @@ func (c *Client) ReusePhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNum
 		return nil, sms.ErrInvalidMetadata
 	}
 
-	err := c.do(ctx, http.MethodPost, "sms/reactivate", url.Values{
+	var res apiResponse
+	err := c.do(ctx, http.MethodPost, "sms/resend", url.Values{
 		"orderid": {metadata.id},
-	}, nil)
+	}, &res)
 	if err != nil {
 		return nil, err
+	}
+
+	if res.Success == 0 {
+		return nil, fmt.Errorf("smspool: %s", res.Message)
 	}
 
 	return phoneNumber, nil
