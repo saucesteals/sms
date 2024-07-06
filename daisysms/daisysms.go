@@ -72,19 +72,19 @@ func (c *Client) GetPhoneNumber(ctx context.Context, service string, _ string) (
 	}
 
 	if !strings.HasPrefix(res, "ACCESS_NUMBER") {
-		return nil, fmt.Errorf("smspool: %s", res)
+		return nil, fmt.Errorf("daisysms: %s", res)
 	}
 
 	numCols := 3
 	parts := strings.SplitN(res, ":", numCols)
 	if len(parts) != numCols {
-		return nil, fmt.Errorf("smspool: %q does not have %d cols", res, numCols)
+		return nil, fmt.Errorf("daisysms: invalid phone format %q", res)
 	}
 
 	id := parts[1]
 	number, err := phonenumbers.Parse("+"+parts[2], "US")
 	if err != nil {
-		return nil, fmt.Errorf("smspva: parsing phone number for %q", res)
+		return nil, fmt.Errorf("daisysms: parsing phone number for %q", res)
 	}
 
 	return &sms.PhoneNumber{
