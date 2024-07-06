@@ -14,8 +14,6 @@ import (
 )
 
 type Client struct {
-	sms.Client
-
 	http   *http.Client
 	apiKey string
 }

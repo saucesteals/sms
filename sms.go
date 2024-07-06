@@ -23,6 +23,11 @@ func (p *PhoneNumber) MarkUsed() {
 	p.used = true
 }
 
+func (p *PhoneNumber) Reuse() {
+	p.used = false
+	p.cancelled = false
+}
+
 func (p *PhoneNumber) Used() bool {
 	return p.used
 }

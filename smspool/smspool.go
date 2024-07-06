@@ -21,8 +21,6 @@ var (
 )
 
 type Client struct {
-	sms.Client
-
 	http   *http.Client
 	apiKey string
 }
@@ -196,6 +194,10 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 
 	phoneNumber.MarkCancelled()
 	return nil
+}
+
+func (c *Client) ReportPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
+	return c.CancelPhoneNumber(ctx, phoneNumber)
 }
 
 func (c *Client) ReusePhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) (*sms.PhoneNumber, error) {

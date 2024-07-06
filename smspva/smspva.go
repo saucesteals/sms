@@ -13,8 +13,6 @@ import (
 )
 
 type Client struct {
-	sms.Client
-
 	http   *http.Client
 	apiKey string
 }
@@ -158,6 +156,5 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 }
 
 func (c *Client) ReportPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
-	// smspva does not support reporting
-	return nil
+	return c.CancelPhoneNumber(ctx, phoneNumber)
 }
