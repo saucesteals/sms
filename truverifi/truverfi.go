@@ -27,6 +27,10 @@ func NewClient(apiKey string) *Client {
 	}
 }
 
+var (
+	_ sms.Client = &Client{}
+)
+
 type changeServicePayload struct {
 	Services []string `json:"services"`
 }

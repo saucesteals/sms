@@ -19,6 +19,10 @@ type Client struct {
 	apiKey string
 }
 
+var (
+	_ sms.Client = &Client{}
+)
+
 func NewClient(apiKey string) *Client {
 	return &Client{
 		http:   http.DefaultClient,

@@ -45,3 +45,8 @@ type Client interface {
 	CancelPhoneNumber(ctx context.Context, phoneNumber *PhoneNumber) error
 	ReportPhoneNumber(ctx context.Context, phoneNumber *PhoneNumber) error
 }
+
+type ReusableClient interface {
+	Client
+	ReusePhoneNumber(ctx context.Context, phoneNumber *PhoneNumber) (*PhoneNumber, error)
+}

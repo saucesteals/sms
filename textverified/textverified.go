@@ -32,6 +32,10 @@ type Client struct {
 	authDetails *AuthDetails
 }
 
+var (
+	_ sms.ReusableClient = &Client{}
+)
+
 type metadata struct {
 	id string
 }

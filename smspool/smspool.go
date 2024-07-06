@@ -27,6 +27,10 @@ type Client struct {
 	apiKey string
 }
 
+var (
+	_ sms.ReusableClient = &Client{}
+)
+
 type metadata struct {
 	id string
 }
