@@ -168,7 +168,7 @@ func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) 
 	case 5:
 		return nil, ErrCancelled
 	default:
-		return nil, fmt.Errorf("smspool: unknown status %d", res.Status)
+		return nil, fmt.Errorf("smspool: unknown status %d: %s", res.Status, res.Message)
 	}
 }
 
