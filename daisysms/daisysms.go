@@ -103,42 +103,29 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 		return sms.ErrInvalidMetadata
 	}
 
+	var status, success string
+	if phoneNumber.Used() {
+		status = "8"
+		success = "ACCESS_CANCEL"
+	} else {
+		status = "6"
+		success = "ACCESS_ACTIVATION"
+	}
+
 	res, err := c.do(ctx, url.Values{
 		"action": {"setStatus"},
-		"status": {"8"},
+		"status": {status},
 		"id":     {metadata.id},
 	})
 	if err != nil {
 		return err
 	}
 
-	if res != "ACCESS_CANCEL" {
+	if res != success {
 		return fmt.Errorf("daisysms: failed to cancel %q", res)
 	}
 
 	phoneNumber.MarkCancelled()
-	return nil
-}
-
-func (c *Client) DonePhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
-	metadata, ok := phoneNumber.Metadata.(metadata)
-	if !ok {
-		return sms.ErrInvalidMetadata
-	}
-
-	res, err := c.do(ctx, url.Values{
-		"action": {"setStatus"},
-		"status": {"6"},
-		"id":     {metadata.id},
-	})
-	if err != nil {
-		return err
-	}
-
-	if res != "ACCESS_ACTIVATION" {
-		return fmt.Errorf("daisysms: failed to mark as done %q", res)
-	}
-
 	return nil
 }
 
