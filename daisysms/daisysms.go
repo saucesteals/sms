@@ -105,11 +105,11 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 
 	var status, success string
 	if phoneNumber.Used() {
-		status = "8"
-		success = "ACCESS_CANCEL"
-	} else {
 		status = "6"
 		success = "ACCESS_ACTIVATION"
+	} else {
+		status = "8"
+		success = "ACCESS_CANCEL"
 	}
 
 	res, err := c.do(ctx, url.Values{
