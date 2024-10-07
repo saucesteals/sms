@@ -94,7 +94,7 @@ func (c *Client) GetPhoneNumber(ctx context.Context, service string, _ string) (
 }
 
 func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
-	if phoneNumber.Used() || phoneNumber.Cancelled() {
+	if phoneNumber.Cancelled() {
 		return nil
 	}
 
@@ -117,6 +117,28 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 	}
 
 	phoneNumber.MarkCancelled()
+	return nil
+}
+
+func (c *Client) DonePhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
+	metadata, ok := phoneNumber.Metadata.(metadata)
+	if !ok {
+		return sms.ErrInvalidMetadata
+	}
+
+	res, err := c.do(ctx, url.Values{
+		"action": {"setStatus"},
+		"status": {"6"},
+		"id":     {metadata.id},
+	})
+	if err != nil {
+		return err
+	}
+
+	if res != "ACCESS_ACTIVATION" {
+		return fmt.Errorf("daisysms: failed to mark as done %q", res)
+	}
+
 	return nil
 }
 
