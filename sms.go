@@ -9,6 +9,7 @@ import (
 
 var (
 	ErrInvalidMetadata = errors.New("sms: invalid metadata type")
+	ErrRatelimited     = errors.New("sms: ratelimited")
 )
 
 type PhoneNumber struct {

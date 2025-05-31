@@ -59,7 +59,13 @@ func (c *Client) do(ctx context.Context, query url.Values) (string, error) {
 		return "", err
 	}
 
-	return string(data), nil
+	content := string(data)
+
+	if content == "TOO_MANY_REQUESTS" {
+		return "", sms.ErrRatelimited
+	}
+
+	return content, nil
 }
 
 func (c *Client) GetPhoneNumber(ctx context.Context, service string, _ string) (*sms.PhoneNumber, error) {

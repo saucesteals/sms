@@ -2,6 +2,7 @@ package sms
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -21,6 +22,10 @@ func NewMatcher(matcher MatcherFn, delay time.Duration, timeout time.Duration) *
 func (m *Matcher) getMatch(ctx context.Context, client Client, phoneNumber *PhoneNumber) (string, error) {
 	messages, err := client.GetMessages(ctx, phoneNumber)
 	if err != nil {
+		if errors.Is(err, ErrRatelimited) {
+			return "", nil
+		}
+
 		return "", err
 	}
 
