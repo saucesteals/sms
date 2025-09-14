@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/nyaruka/phonenumbers"
@@ -189,4 +190,29 @@ func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) 
 
 	phoneNumber.MarkUsed()
 	return []string{code}, nil
+}
+
+func (c *Client) GetBalance(ctx context.Context) (float64, error) {
+	res, err := c.do(ctx, url.Values{
+		"action": {"getBalance"},
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	if !strings.HasPrefix(res, "ACCESS_BALANCE") {
+		return 0, fmt.Errorf("daisysms: get balance: %q", res)
+	}
+
+	parts := strings.SplitN(res, ":", 2)
+	if len(parts) != 2 {
+		return 0, fmt.Errorf("daisysms: invalid balance format %q", res)
+	}
+
+	bal, err := strconv.ParseFloat(parts[1], 64)
+	if err != nil {
+		return 0, fmt.Errorf("daisysms: parsing balance %q: %w", res, err)
+	}
+
+	return bal, nil
 }
