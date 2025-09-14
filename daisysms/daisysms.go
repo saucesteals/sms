@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/nyaruka/phonenumbers"
@@ -199,27 +200,19 @@ func (c *Client) GetBalance(ctx context.Context) (float64, error) {
 		return 0, err
 	}
 
-	var raw string
-	switch {
-	case strings.HasPrefix(res, "ACCESS_BALANCE"):
-		parts := strings.SplitN(res, ":", 3)
-		if len(parts) < 2 {
-			return 0, fmt.Errorf("daisysms: invalid balance format %q", res)
-		}
-		raw = parts[1]
-	case strings.HasPrefix(res, "BALANCE"):
-		parts := strings.SplitN(res, ":", 2)
-		if len(parts) < 2 {
-			return 0, fmt.Errorf("daisysms: invalid balance format %q", res)
-		}
-		raw = parts[1]
-	default:
-		raw = strings.TrimSpace(res)
+	if !strings.HasPrefix(res, "ACCESS_BALANCE") {
+		return 0, fmt.Errorf("daisysms: get balance: %q", res)
 	}
 
-	bal, err := strconv.ParseFloat(raw, 64)
+	parts := strings.SplitN(res, ":", 2)
+	if len(parts) != 2 {
+		return 0, fmt.Errorf("daisysms: invalid balance format %q", res)
+	}
+
+	bal, err := strconv.ParseFloat(parts[1], 64)
 	if err != nil {
 		return 0, fmt.Errorf("daisysms: parsing balance %q: %w", res, err)
 	}
+
 	return bal, nil
 }
