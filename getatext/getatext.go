@@ -35,6 +35,12 @@ type metadata struct {
 	id int
 }
 
+// NewMetadata constructs a PhoneNumber metadata value for use in tests or
+// when reconstructing a PhoneNumber from a known rental ID.
+func NewMetadata(id int) any {
+	return metadata{id: id}
+}
+
 func NewClient(apiKey string) *Client {
 	return &Client{
 		http:   http.DefaultClient,
