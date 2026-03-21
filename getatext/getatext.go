@@ -99,13 +99,13 @@ type rentRequest struct {
 }
 
 type rentResponse struct {
-	ID          int     `json:"id"`
-	Status      string  `json:"status"`
-	Number      string  `json:"number"`
-	ServiceName string  `json:"service_name"`
-	Price       float64 `json:"price"`
-	NewBalance  float64 `json:"new_balance"`
-	EndTime     string  `json:"end_time"`
+	ID          int            `json:"id"`
+	Status      string         `json:"status"`
+	Number      string         `json:"number"`
+	ServiceName string         `json:"service_name"`
+	Price       json.Number    `json:"price"`
+	NewBalance  json.Number    `json:"new_balance"`
+	EndTime     string         `json:"end_time"`
 }
 
 func (c *Client) GetPhoneNumber(ctx context.Context, service string, _ string) (*sms.PhoneNumber, error) {
