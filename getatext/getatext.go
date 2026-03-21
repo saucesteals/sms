@@ -99,13 +99,13 @@ type rentRequest struct {
 }
 
 type rentResponse struct {
-	ID          int    `json:"id"`
-	Status      string `json:"status"`
-	Number      string `json:"number"`
-	ServiceName string `json:"service_name"`
-	Price       string `json:"price"`
-	NewBalance  string `json:"new_balance"`
-	EndTime     string `json:"end_time"`
+	ID          int     `json:"id"`
+	Status      string  `json:"status"`
+	Number      string  `json:"number"`
+	ServiceName string  `json:"service_name"`
+	Price       float64 `json:"price"`
+	NewBalance  float64 `json:"new_balance"`
+	EndTime     string  `json:"end_time"`
 }
 
 func (c *Client) GetPhoneNumber(ctx context.Context, service string, _ string) (*sms.PhoneNumber, error) {
@@ -238,18 +238,22 @@ func (c *Client) GetBalance(ctx context.Context) (float64, error) {
 }
 
 type Service struct {
-	ServiceName string `json:"service_name"`
-	APIName     string `json:"api_name"`
-	Price       string `json:"price"`
-	Stock       int    `json:"stock"`
-	TTL         int    `json:"ttl"`
+	ServiceName string  `json:"service_name"`
+	APIName     string  `json:"api_name"`
+	Price       float64 `json:"price"`
+	Stock       int     `json:"stock"`
+	TTL         int     `json:"ttl"`
+}
+
+type pricesResponse struct {
+	Prices []Service `json:"prices"`
 }
 
 func (c *Client) GetServices(ctx context.Context) ([]Service, error) {
-	var services []Service
-	if err := c.do(ctx, http.MethodGet, "/prices-info", nil, &services); err != nil {
+	var resp pricesResponse
+	if err := c.do(ctx, http.MethodGet, "/prices-info", nil, &resp); err != nil {
 		return nil, err
 	}
 
-	return services, nil
+	return resp.Prices, nil
 }
