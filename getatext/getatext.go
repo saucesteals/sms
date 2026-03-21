@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"strconv"
 
 	"github.com/nyaruka/phonenumbers"
@@ -163,7 +162,7 @@ func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) 
 		return []string{*resp.Code}, nil
 	}
 
-	if strings.Contains(resp.Message, "permission") {
+	if resp.Message != "" {
 		return nil, fmt.Errorf("getatext: %s", resp.Message)
 	}
 
