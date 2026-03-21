@@ -143,7 +143,6 @@ type statusResponse struct {
 	Number      string  `json:"number"`
 	ServiceName string  `json:"service_name"`
 	Cost        string  `json:"cost"`
-	Message     string  `json:"message"`
 }
 
 func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) ([]string, error) {
@@ -160,10 +159,6 @@ func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) 
 	if resp.Code != nil {
 		phoneNumber.MarkUsed()
 		return []string{*resp.Code}, nil
-	}
-
-	if resp.Message != "" {
-		return nil, fmt.Errorf("getatext: %s", resp.Message)
 	}
 
 	return []string{}, nil
