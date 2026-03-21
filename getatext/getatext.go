@@ -16,23 +16,16 @@ import (
 const baseURL = "https://getatext.com/api/v1"
 
 type Client struct {
-	http        *http.Client
-	apiKey      string
-	RentOptions *RentOptions
+	http   *http.Client
+	apiKey string
 }
 
 var _ sms.ReusableClient = &Client{}
 
-type RentOptions struct {
-	MaxPrice     float64 `json:"max_price,omitempty"`
-	Carrier      string  `json:"carrier,omitempty"`
-	KeepCarrier  bool    `json:"keep_carrier,omitempty"`
-	LockAreaCode bool    `json:"lock_area_code,omitempty"`
-	AreaCodes    string  `json:"area_codes,omitempty"`
-}
-
 type metadata struct {
-	id int
+	id             int
+	lastCode       string
+	ignoreLastCode bool
 }
 
 
@@ -91,12 +84,7 @@ func (c *Client) do(ctx context.Context, method string, path string, payload any
 }
 
 type rentRequest struct {
-	Service      string  `json:"service"`
-	MaxPrice     float64 `json:"max_price,omitempty"`
-	Carrier      string  `json:"carrier,omitempty"`
-	KeepCarrier  bool    `json:"keep_carrier,omitempty"`
-	LockAreaCode bool    `json:"lock_area_code,omitempty"`
-	AreaCodes    string  `json:"area_codes,omitempty"`
+	Service string `json:"service"`
 }
 
 type rentResponse struct {
@@ -111,13 +99,6 @@ type rentResponse struct {
 
 func (c *Client) GetPhoneNumber(ctx context.Context, service string, _ string) (*sms.PhoneNumber, error) {
 	req := rentRequest{Service: service}
-	if c.RentOptions != nil {
-		req.MaxPrice = c.RentOptions.MaxPrice
-		req.Carrier = c.RentOptions.Carrier
-		req.KeepCarrier = c.RentOptions.KeepCarrier
-		req.LockAreaCode = c.RentOptions.LockAreaCode
-		req.AreaCodes = c.RentOptions.AreaCodes
-	}
 
 	var resp rentResponse
 	if err := c.do(ctx, http.MethodPost, "/rent-a-number", req, &resp); err != nil {
@@ -156,12 +137,20 @@ func (c *Client) GetMessages(ctx context.Context, phoneNumber *sms.PhoneNumber) 
 		return nil, err
 	}
 
-	if resp.Code != nil {
-		phoneNumber.MarkUsed()
-		return []string{*resp.Code}, nil
+	if resp.Code == nil {
+		return []string{}, nil
 	}
 
-	return []string{}, nil
+	code := *resp.Code
+	if meta.ignoreLastCode && meta.lastCode == code {
+		return []string{}, nil
+	}
+
+	meta.lastCode = code
+	phoneNumber.Metadata = meta
+
+	phoneNumber.MarkUsed()
+	return []string{code}, nil
 }
 
 type cancelRequest struct {
@@ -187,16 +176,7 @@ func (c *Client) CancelPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNu
 }
 
 func (c *Client) ReportPhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) error {
-	meta, ok := phoneNumber.Metadata.(metadata)
-	if !ok {
-		return sms.ErrInvalidMetadata
-	}
-
-	return c.do(ctx, http.MethodPost, fmt.Sprintf("/rental-status/%d/completed", meta.id), nil, nil)
-}
-
-type rerentRequest struct {
-	RentalID int `json:"rental_id"`
+	return c.CancelPhoneNumber(ctx, phoneNumber)
 }
 
 func (c *Client) ReusePhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNumber) (*sms.PhoneNumber, error) {
@@ -205,18 +185,10 @@ func (c *Client) ReusePhoneNumber(ctx context.Context, phoneNumber *sms.PhoneNum
 		return nil, sms.ErrInvalidMetadata
 	}
 
-	var resp rentResponse
-	if err := c.do(ctx, http.MethodPost, "/re-rent", rerentRequest{RentalID: meta.id}, &resp); err != nil {
-		return nil, err
-	}
-
-	number, err := phonenumbers.Parse("+1"+resp.Number, "US")
-	if err != nil {
-		return nil, fmt.Errorf("getatext: parsing phone number (%s): %w", resp.Number, err)
-	}
-
+	meta.ignoreLastCode = true
+	phoneNumber.Metadata = meta
 	phoneNumber.Reuse()
-	return &sms.PhoneNumber{PhoneNumber: number, Metadata: metadata{id: resp.ID}}, nil
+	return phoneNumber, nil
 }
 
 type balanceResponse struct {
